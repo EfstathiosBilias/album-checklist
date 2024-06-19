@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Album List</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            /* Prevent horizontal scroll on the body */
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .album-list-container {
+            max-width: 90vw;
+            /* Limit the width of the album list container */
+            max-height: 70vh;
+            /* Limit the height with scroll */
+            overflow-y: auto;
+            /* Enable vertical scroll if content exceeds container height */
+        }
+
+        .album-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            /* Responsive grid layout */
+            gap: 15px;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 10px;
+            background-color: #1e1e1e;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            overflow: hidden;
+            /* Hide any overflow */
+        }
+
+        .album-item {
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #333;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+            position: relative;
+            /* Ensure position for absolute child elements */
+        }
+
+        .album-item:hover {
+            transform: translateY(-5px);
+            /* Lift on hover effect */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .album-item a {
+            color: #fff;
+            font-size: 1.2em;
+            text-decoration: none;
+            margin-top: 10px;
+            display: block;
+            /* Ensure full click area for links */
+        }
+
+        .album-item.completed a {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        .album-item label::before {
+            content: "🎵 ";
+            /* Added a space after the emoji */
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Album List</h1>
+    <div class="album-list-container">
+        <div class="album-list" id="albumContainer"></div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('albums.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(albums => {
+                    const albumContainer = document.getElementById('albumContainer');
+
+                    // Load completed albums from localStorage or initialize empty array
+                    let completedAlbums = JSON.parse(localStorage.getItem('completedAlbums')) || [];
+
+                    albums.forEach((album, index) => {
+                        const albumItem = document.createElement('div');
+                        albumItem.className = 'album-item';
+                        albumItem.innerHTML = `
+                    <label for="album${index + 1}">
+                        <a href="${album.link}" target="_blank">${album.name}</a>
+                    </label>
+                `;
+
+                        // Check if album is in completedAlbums array
+                        if (completedAlbums.includes(album.name)) {
+                            albumItem.classList.add('completed');
+                        }
+
+                        albumContainer.appendChild(albumItem);
+
+                        // Handle album item click
+                        albumItem.addEventListener('click', (event) => {
+                            // Prevent default action of the click event to avoid unwanted behavior
+                            event.preventDefault();
+
+                            // Toggle completed class for visual indication
+                            albumItem.classList.toggle('completed');
+
+                            // Update completedAlbums array based on current state
+                            if (albumItem.classList.contains('completed')) {
+                                completedAlbums.push(album.name);
+                            } else {
+                                completedAlbums = completedAlbums.filter(name => name !== album.name);
+                            }
+
+                            // Store updated completedAlbums array in localStorage
+                            localStorage.setItem('completedAlbums', JSON.stringify(completedAlbums));
+
+                            // Open link in a new tab if not clicking on the link itself
+                            const target = event.target;
+                            if (target.tagName !== 'A') {
+                                window.open(album.link, '_blank');
+                            }
+                        });
+                    });
+                })
+                .catch(error => console.error('Error fetching albums:', error));
+        });
+
+    </script>
+</body>
+
+</html>
